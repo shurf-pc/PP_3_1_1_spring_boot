@@ -1,98 +1,14 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Таблица пользователей</title>
-    <style>
-        body {
-            margin: 0;
-        }
-
-        .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 20px;
-        }
-
-        table {
-            width: min-content;
-            min-width: 800px;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #f2f2f2;
-        }
-
-        th:first-child, td:first-child {
-            width: 1%;
-            white-space: nowrap;
-        }
-
-        th:last-child, td:last-child {
-            width: 155px;
-            white-space: nowrap;
-        }
-
-        .edit-input {
-            width: 90%;
-            box-sizing: border-box;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgb(0, 0, 0);
-            background-color: rgba(0, 0, 0, 0.4);
-        }
-
-        .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-        }
-
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .add-user-container {
-            text-align: center;
-            margin-top: 20px;
-        }
-    </style>
 </head>
 <body>
-<div class="container">
+<div>
     <h1>Таблица пользователей</h1>
-    <table id="usersTable">
+    <table border="1">
         <thead>
         <tr>
             <th>ID</th>
@@ -107,214 +23,19 @@
             <td th:text="${user.name}"></td>
             <td th:text="${user.email}"></td>
             <td>
-                <button onclick="editRow(this)">Изменить</button>
-                <button onclick="deleteRow(this)">Удалить</button>
+                <a th:href="@{/updateUser(id=${user.id})}">Изменить</a>
+                <a th:href="@{/deleteUser(id=${user.id})}">Удалить</a>
             </td>
         </tr>
         </tbody>
     </table>
 
-    <div class="add-user-container">
-        <button onclick="addUserRow()">Добавить пользователя</button>
+    <div>
+        <form th:action="@{/addUser}" method="get">
+            <button type="submit">Добавить пользователя</button>
+        </form>
     </div>
 </div>
 
-<div id="myModal" class="modal">
-    <div class="modal-content">
-        <span class="close">&times;</span>
-        <p id="modalMessage"></p>
-    </div>
-</div>
-
-<script>
-    function editRow(button) {
-        const row = button.parentElement.parentElement;
-        const nameCell = row.cells[1];
-        const emailCell = row.cells[2];
-
-        const nameInput = document.createElement('input');
-        nameInput.type = 'text';
-        nameInput.value = nameCell.innerText;
-        nameInput.className = 'edit-input';
-
-        const emailInput = document.createElement('input');
-        emailInput.type = 'text';
-        emailInput.value = emailCell.innerText;
-        emailInput.className = 'edit-input';
-
-        nameCell.innerText = '';
-        nameCell.appendChild(nameInput);
-
-        emailCell.innerText = '';
-        emailCell.appendChild(emailInput);
-
-        button.innerText = 'Сохранить';
-        button.onclick = function () {
-            saveRow(button, nameInput, emailInput);
-        };
-    }
-
-    function saveRow(button, nameInput, emailInput) {
-        const row = button.parentElement.parentElement;
-        const id = row.cells[0].innerText;
-        const newName = nameInput.value.trim();
-        const newEmail = emailInput.value.trim();
-
-        if (newName === '' || newEmail === '') {
-            showModal('Имя и email не могут быть пустыми');
-            return;
-        }
-
-        const formData = new URLSearchParams();
-        formData.append('id', id);
-        formData.append('name', newName);
-        formData.append('email', newEmail);
-
-        fetch('/updateUser', {
-            method: 'POST',
-            headers: {
-                accept: 'application/x-www-form-urlencoded ; charset=UTF-8',
-                'Content-Type': 'application/x-www-form-urlencoded ; charset=UTF-8'
-            },
-            body: formData.toString()
-        })
-            .then(response => response.text())
-            .then(responseText => {
-                const data = parseQueryString(responseText);
-                if (data.success === 'true') {
-                    row.cells[1].innerText = data.name;
-                    row.cells[2].innerText = data.email;
-                    row.cells[3].innerHTML = '<button onclick="editRow(this)">Изменить</button> <button onclick="deleteRow(this)">Удалить</button>';
-                } else {
-                    alert('Ошибка при обновлении данных');
-                }
-            });
-    }
-
-    function deleteRow(button) {
-        const row = button.parentElement.parentElement;
-        const id = row.cells[0].innerText;
-
-        const formData = new URLSearchParams();
-        formData.append('id', id);
-
-        fetch('/deleteUser', {
-            method: 'POST',
-            headers: {
-                accept: 'application/x-www-form-urlencoded ; charset=UTF-8',
-                'Content-Type': 'application/x-www-form-urlencoded ; charset=UTF-8'
-            },
-            body: formData.toString()
-        })
-            .then(response => response.text())
-            .then(responseText => {
-                const data = parseQueryString(responseText);
-                if (data.success === 'true') {
-                    row.remove();
-                } else {
-                    alert('Ошибка при удалении данных');
-                }
-            });
-    }
-
-    function addUserRow() {
-        const table = document.getElementById('usersTable');
-        const newRow = table.insertRow(-1);
-
-        const idCell = newRow.insertCell(0);
-        const nameCell = newRow.insertCell(1);
-        const emailCell = newRow.insertCell(2);
-        const actionCell = newRow.insertCell(3);
-
-        const nameInput = document.createElement('input');
-        nameInput.type = 'text';
-        nameInput.className = 'edit-input';
-        nameCell.appendChild(nameInput);
-
-        const emailInput = document.createElement('input');
-        emailInput.type = 'text';
-        emailInput.className = 'edit-input';
-        emailCell.appendChild(emailInput);
-
-        const saveButton = document.createElement('button');
-        saveButton.innerText = 'Сохранить';
-        saveButton.onclick = function () {
-            saveNewUser(newRow, nameInput, emailInput);
-        };
-
-        const cancelButton = document.createElement('button');
-        cancelButton.innerText = 'Отмена';
-        cancelButton.onclick = function () {
-            newRow.remove();
-        };
-
-        actionCell.appendChild(saveButton);
-        actionCell.appendChild(cancelButton);
-    }
-
-    function saveNewUser(row, nameInput, emailInput) {
-        const newName = nameInput.value.trim();
-        const newEmail = emailInput.value.trim();
-
-        if (newName === '' || newEmail === '') {
-            showModal('Имя и email не могут быть пустыми');
-            return;
-        }
-
-        const formData = new URLSearchParams();
-        formData.append('name', newName);
-        formData.append('email', newEmail);
-
-        fetch('/addUser', {
-            method: 'POST',
-            headers: {
-                accept: 'application/x-www-form-urlencoded ; charset=UTF-8',
-                'Content-Type': 'application/x-www-form-urlencoded ; charset=UTF-8'
-            },
-            body: formData.toString()
-        })
-            .then(response => response.text())
-            .then(responseText => {
-                const data = parseQueryString(responseText);
-                if (data.success === 'true') {
-                    row.cells[0].innerText = data.id;
-                    row.cells[1].innerText = data.name;
-                    row.cells[2].innerText = data.email;
-                    row.cells[3].innerHTML = '<button onclick="editRow(this)">Изменить</button> <button onclick="deleteRow(this)">Удалить</button>';
-                } else {
-                    alert('Ошибка при добавлении пользователя');
-                }
-            });
-    }
-
-    function showModal(message) {
-        const modal = document.getElementById('myModal');
-        const modalMessage = document.getElementById('modalMessage');
-        modalMessage.innerText = message;
-        modal.style.display = 'block';
-
-        const span = document.getElementsByClassName('close')[0];
-        span.onclick = function () {
-            modal.style.display = 'none';
-        }
-
-        window.onclick = function (event) {
-            if (event.target === modal) {
-                modal.style.display = 'none';
-            }
-        }
-    }
-
-    function parseQueryString(queryString) {
-        const params = new URLSearchParams(queryString);
-        const result = {};
-
-        for (const [key, value] of params.entries()) {
-            result[key] = decodeURIComponent(value);
-        }
-
-        return result;
-    }
-</script>
 </body>
 </html>

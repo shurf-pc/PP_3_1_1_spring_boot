@@ -1,41 +1,62 @@
 package web.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import web.dao.UserDao;
 import web.model.User;
+import web.repository.UserRepository;
 
 import java.util.List;
 
-@Service(value = "useDAO")
+@Service(value = "useRepository")
 @Transactional
 public class UserServiceImp implements UserService {
-    @Autowired
-    private UserDao userDao;
+    private final UserRepository userRepository;
+
+    public UserServiceImp(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Override
     public Long addUser(String name, String email) {
-        return userDao.addUser(name, email);
+        try {
+            User resultUser = userRepository.save(new User(name, email));
+            return resultUser.getId();
+        } catch (Exception e) {
+            return -1L;
+        }
     }
 
     @Override
     public boolean deleteUser(Long id) {
-        return userDao.deleteUser(id);
+        try {
+            userRepository.deleteById(id);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Override
     public boolean updateUser(User user) {
-        return userDao.updateUser(user);
+        try {
+            userRepository.save(user);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Override
     public User getUser(Long id) {
-        return userDao.getUser(id);
+        return userRepository.findById(id).isPresent() ? userRepository.findById(id).get() : null;
     }
 
     @Override
     public List<User> getAllUsers() {
-        return userDao.getAllUsers();
+        try {
+            return userRepository.findAll();
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
